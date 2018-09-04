@@ -1,5 +1,5 @@
 # FASTLANE INTEGRATION IN ANDROID
-Fastlane Integration
+This integrates fastlane integration with an android application
 
 ## Setting up FASTLANE
 Run the following command in your terminal
