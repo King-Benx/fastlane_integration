@@ -1,0 +1,72 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+  before_all do
+    ENV["SLACK_URL"] = "https://hooks.slack.com/services/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"
+  end
+
+
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Submit a new Beta Build to Crashlytics Beta"
+  lane :beta do
+    gradle(task: "clean assembleRelease")
+    crashlytics
+  
+    # sh "your_script.sh"
+    # You can also use other beta testing services here
+  end
+
+  desc "Deploy a new version to the Google Play"
+  lane :deploy do
+    gradle(task: "clean assembleRelease")
+    upload_apk_to_slack
+  end
+
+
+  desc "Building our application"
+  lane :build_test_app do
+    gradle(
+        task: "assemble",
+        build_type: "Release"
+        )
+  end
+
+  desc "upload to slack"
+  private_lane :upload_apk_to_slack do |options|
+    file_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]
+    file_name = file_path.gsub(/\/.*\//,"")
+    api_token = ENV["API_TOKEN"]
+    sh “echo Uploading ” + file_name + ” to #fastlane integration Slack”
+    sh “curl https://slack.com/api/files.upload -F token=” + api_token + ” -F channels=\“fastlane-integration\” -F title=\“” + file_name + “\” -F filename=\“” + file_name + “\” -F file=@” + file_path
+   end
+
+
+  after_all do |lane|
+    slack(message: "Test app processing")
+  end
+
+  error do |lane, exception|
+    slack(message: exception.message, success: false)
+  end
+
+end
+
